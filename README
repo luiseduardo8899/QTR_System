@@ -1,0 +1,46 @@
+START WITH VIRTUAL ENV:
+  #>pip3 install --user virtualenv
+NOTE: virtualenv For Debian / Ubuntu:
+  #>sudo apt install python3.8-venv
+
+CREATE VIRTUAL ENV:
+  #> python3 -m venv env
+
+
+START VIRTUAL ENV:
+  #> source env/bin/activate
+  #> which python
+  #> deactivate
+
+------------------------------------
+PACKAGES TO INSTALL:
+  Django and file manipulation
+  #> pip3 install django
+  #> pip install xlwt			< create spreadsheets
+  #> pip install xlrd			< read spreadsheets
+  #> pip install pandas			< convert xls to html ( data analysis library )
+  #> pip install xhtml2pdf		< convert html to PDF
+
+  Algorand related
+  #>pip3 install py-algorand-sdk
+  #>pip3 install pyteal
+
+Generate EXCEL and PDF: <- quotes and invoices will be geenrated using both spreadsheets and PDF
+
+
+RECOMMENDED:
+. Add Django extension to visual studio code
+  https://marketplace.visualstudio.com/items?itemName=batisteo.vscode-django
+
+
+Create superuser
+#> python3 manage.py createsuperuser
+
+
+Create migrations after model changes to update database
+#>python3 manage.py makemigrations
+#>python3 manage.py migrate
+
+
+Run server:
+#> python3 manage.py createsuperuser
