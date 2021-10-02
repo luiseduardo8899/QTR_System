@@ -33,14 +33,32 @@ RECOMMENDED:
   https://marketplace.visualstudio.com/items?itemName=batisteo.vscode-django
 
 
-Create superuser
-#> python3 manage.py createsuperuser
+------------------------------------
+LAUNCHING DJANGO SITE / APP
+
+1.Make sure to run i nvirtual env
+  #> source env/bin/activate;
 
 
-Create migrations after model changes to update database
-#>python3 manage.py makemigrations
-#>python3 manage.py migrate
+2.Create migrations after model changes to update database
+  #> cd QTR_site
+  #>python3 manage.py makemigrations
+  #>python3 manage.py migrate
 
 
-Run server:
-#> python3 manage.py createsuperuser
+3.Create superuser
+  #> python3 manage.py createsuperuser
+
+
+4.Run server:
+  #> python3 manage.py  runserver
+
+
+NOTE: If you need to reload database from scratch, remove migrations
+To remove migrations:
+  #> find . -path "*/migrations/*.py" -not -name "__init__.py" -delete
+  #> find . -path "*/migrations/*.pyc"  -delete
+  #> rm -rf: db.sqlite3
+  #> python manage.py makemigrations
+  #> python manage.py migrate
+
