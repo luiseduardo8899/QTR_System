@@ -20,6 +20,7 @@ PACKAGES TO INSTALL:
   #> pip install xlrd			< read spreadsheets
   #> pip install pandas			< convert xls to html ( data analysis library )
   #> pip install xhtml2pdf		< convert html to PDF
+  #> pip install django-crispy-forms    < convert Django models to forms
 
   Algorand related
   #>pip3 install py-algorand-sdk

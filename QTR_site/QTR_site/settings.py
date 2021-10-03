@@ -11,6 +11,7 @@ https://docs.djangoproject.com/en/3.2/ref/settings/
 """
 
 from pathlib import Path
+import os
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -37,8 +38,17 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
-    'product_quotes'
+    'product_quotes',
+    'crispy_forms',
+
 ]
+
+#Directory to upload media files, pictures, videos
+MEDIA_URL = 'media/'
+MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
+DATA_URL = 'data/'
+DATA_ROOT = os.path.join(BASE_DIR, 'data')
+
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
@@ -55,7 +65,7 @@ ROOT_URLCONF = 'QTR_site.urls'
 TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
-        'DIRS': [],
+        'DIRS': [os.path.join(BASE_DIR, 'sitewide', 'templates'),],
         'APP_DIRS': True,
         'OPTIONS': {
             'context_processors': [
@@ -120,7 +130,17 @@ USE_TZ = True
 
 STATIC_URL = '/static/'
 
+STATICFILES_DIRS = [
+    os.path.join(BASE_DIR, "static"),
+]
+
 # Default primary key field type
 # https://docs.djangoproject.com/en/3.2/ref/settings/#default-auto-field
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
+
+
+#ALGO SETTINGS
+COMPANY_ALGO_ADDRESS="5SQQEJ6LWLFX6OSRO3DKBEK7B7IK455CIKWNYKULL6MPTKIP6XMOEC36JQ"
+COMPANY_PRIVATE_KEY="zHB/hYuj4uJeLC8AcqzUZ8ftegWfd0AyhKA0DuLJsITsoQIny7LLfzpRdsagkV8P0K53okKs3CqLX5j5qQ/12A=="
+COMPANY_MNEMONIC="book worry section december shed reward glass connect divorce range tumble island swear gadget wealth jealous elite awkward expect today series crash cereal above north"

@@ -1,0 +1,68 @@
+<!DOCTYPE HTML>
+<html lang = "en">
+
+{% load static %}
+
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+    <meta http-equiv="x-ua-compatible" content="ie=edge">
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.2.1/jquery.min.js"></script>
+    <title>QTR System : Algorand based sales and licensing system</title>
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/font-awesome/4.6.0/css/font-awesome.min.css">
+    <!-- Bootstrap core CSS -->
+    <link href="{% static "mdb/css/bootstrap.css" %}" rel="stylesheet">
+    <!-- Material Design Bootstrap -->
+    <link href="{% static "mdb/css/mdb.css" %}" rel="stylesheet">
+    <!-- Your custom styles (optional) -->
+    <link href="{% static "mdb/css/style.css" %}" rel="stylesheet">
+
+<style>
+.fullscreen-bg {
+    position: fixed;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    left: 0;
+    overflow: hidden;
+    z-index: -100;
+}
+
+.fullscreen-bg__video {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+}
+</style>
+</head>
+
+<body>
+
+<div style="height:8vh">
+</div>
+
+    <div>
+    <!-- CONTENT FOR TEMPLATES THAT EXTEND THIS BASE GOES HERE -->
+            {% block content %}
+            {% endblock %}
+    </div>
+
+<div style="height:2vh">
+</div>
+
+
+    <!-- SCRIPTS -->
+    <!-- JQuery -->
+    <script type="text/javascript" src="{% static "mdb/js/jquery-3.1.1.js" %}" ></script>
+    <!-- Bootstrap tooltips -->
+    <script type="text/javascript" src="{% static "mdb/js/tether.js" %}" ></script>
+    <!-- Bootstrap core JavaScript -->
+    <script type="text/javascript" src="{% static "mdb/js/bootstrap.js" %}" ></script>
+    <!-- MDB core JavaScript -->
+    <script type="text/javascript" src="{% static "mdb/js/mdb.js" %}" ></script>
+</body>
+
+</html>

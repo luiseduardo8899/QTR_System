@@ -90,11 +90,13 @@ class Quote(models.Model):
     txaddr = models.CharField(max_length=200)              #TX Sender Algorand address
     rxaddr = models.CharField(max_length=200)              #RX Receiving Algorand address
     product =  models.ManyToManyField(Product)             #After creating object,  use quote.add(<Product pointer>)
-    quantity = models.IntegerField(max_length=200)         #Quantity of products
+    quantity = models.IntegerField()                        #Quantity of products
     taxable = models.IntegerField(choices=TAXABLE_IDS, default=0) 
     discount = models.IntegerField(default=0)               #Percentage of discount, must be 0%-99%
     term = models.IntegerField(choices=TERM_IDS, default=1) #Payment terms
     validity = models.IntegerField(default=30)              #Number of days the quote is valid
+    algod_txnid = models.CharField(max_length=200, default="")              #Algorand transaction ID when submitted to ledger
+    sha256hash = models.CharField(max_length=64, default="")              #Algorand transaction ID when submitted to ledger
 
 
     def __str__(self):

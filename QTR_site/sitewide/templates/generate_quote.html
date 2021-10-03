@@ -1,0 +1,84 @@
+{% extends "base.html" %}
+{% load i18n %}
+{% block head_title %}{% trans "Create a Quote " %}{% endblock %}
+
+{% load crispy_forms_tags %}
+{% block content %}
+
+<div class="flex-center flex-row ">
+<h1>Create Quote </h1>
+</div>
+
+<br>
+<br>
+
+
+<div class="flex-center flex-row">
+
+    {% for sp in sales_persons %}
+    <h1>{{sp.name}} {{sp.last_name}} </h1>
+    {% endfor %}
+</div>
+
+<div class="flex-center ">
+  <!-- Material form subscription -->
+  <div class="card">
+      <h5 class="card-header info-color white-text text-center py-4">
+          <strong>Generate Quote</strong>
+      </h5>
+  
+      <!--Card content-->
+      <div class="card-body px-lg-5">
+  
+          <!-- Form -->
+          <form action="/quotes/generate_quote/" method="post">
+          {% csrf_token %}
+  
+          <div class="form-group mb-0">
+            {{ form.quote_name|as_crispy_field }}
+          </div>
+          <br>
+          <div class="form-group mb-0">
+            <select class="browser-default custom-select" name="sales_person">
+              <option selected>Select the Sales Person </option>
+              {% for choice in form.sales_person.field.choices %}
+              <option value={{choice.0}}>{{choice.1}}</option>
+              {% endfor %}
+            </select>
+          </div>
+          <br>
+          <div class="form-group mb-0">
+            <select class="browser-default custom-select" name="account">
+              <option selected>Select the account </option>
+              {% for choice in form.account.field.choices %}
+              <option value={{choice.0}}>{{choice.1}}</option>
+              {% endfor %}
+            </select>
+          </div>
+          <br>
+          <div class="form-group mb-0">
+            <select class="browser-default custom-select" name="product">
+              <option selected>Select the Product </option>
+              {% for choice in form.product.field.choices %}
+              <option value={{choice.0}}>{{choice.1}}</option>
+              {% endfor %}
+            </select>
+          </div>
+          <br>
+          <div class="form-group mb-0">
+            {{ form.amount|as_crispy_field }}
+          </div>
+          <br>
+          <div class="form-group mb-0">
+            {{ form.discount|as_crispy_field }}
+          </div>
+          <button class="btn btn-outline-info btn-rounded btn-block z-depth-0 my-4 waves-effect" type="submit">Generate Quote</button>
+          </form>
+          <!-- Form -->
+      </div>
+  </div>
+  <!-- Material form subscription -->
+
+</div>
+
+{% endblock %}
