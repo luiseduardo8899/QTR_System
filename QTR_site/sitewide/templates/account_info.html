@@ -1,0 +1,45 @@
+{% extends "base.html" %}
+{% load i18n %}
+{% block head_title %}{% trans " " %}{% endblock %}
+
+{% load crispy_forms_tags %}
+{% block content %}
+
+<div class="flex-center flex-row ">
+<h1>Account Information </h1>
+</div>
+
+<br>
+<br>
+
+
+<div class="flex-center flex-row">
+
+</div>
+
+<div class="flex-center ">
+  <div class="card">
+      <h5 class="card-header info-color white-text text-center py-4">
+          <strong>Account Information </strong>
+      </h5>
+  
+      <!--Card content-->
+      <div class="card-body px-lg-5">
+      <h4>Algo Address: </h4><p> {{account_address}}</p>
+      <br>
+      <h4>Account Balance: </h4> <p>{{account_balance}} &micro;A</p>
+      <br>
+      <h6>Pending rewards: {{pending_rewards}}</h6>
+      <br>
+      <br>
+      <h4>Trasactions for this account</h4>
+      <p>Ordered from newer to older </p>
+      {% for tx in transactions_json %}
+      <p>{{ forloop.counter }}&ensp; <a target="_blank" href="https://testnet.algoexplorer.io/tx/{{tx.id}}">{{tx.id}} </a></p>
+      {% endfor %}
+      </div>
+  </div>
+
+</div>
+
+{% endblock %}

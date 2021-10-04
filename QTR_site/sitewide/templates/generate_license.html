@@ -43,12 +43,17 @@
           </tr>
         </tbody>
       </table>
-      <h5>LICENSE HASH:{{quote.sha256hash}} <h5>
-      <h5>APPROVAL Teal File:  <h5>
-      <h5>CLEAR STATE Teal File: <h5>
+      <h5>LICENSE HASH:</h5><h4>{{quote.sha256hash}} </h4>
+      <br>
+      <br>
+      <h5>APPROVAL Teal File:</h5> <p style="background-color:powderblue"> {{approval_teal_file}} <p>
+      <br>
+      <h5>CLEAR STATE Teal File:</h5><p style="background-color:powderblue"> {{clearstate_teal_file}} <p>
       <br>
       {%if license_launched%}
-      <h1>LICENSE LAUNCHED ON ALGORAND</h1>
+      <h1 style="background-color:#00FFFF">LICENSE LAUNCHED ON ALGORAND</h1>
+      <h3>Application ID </h3>
+      <h3>Link to Application</h3>
       {% else %}
       <button type="button" class="btn btn-dark large" onclick="window.location.href='/quotes/generate_license/{{quote.quote_id}}/1/'">Launch License on Algorand </button>
       {% endif%}

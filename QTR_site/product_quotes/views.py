@@ -22,6 +22,7 @@ import glob
 import hashlib
 import sys
 from algosdk.v2client import algod
+from algosdk.v2client import indexer
 from algosdk import mnemonic
 from algosdk.future.transaction import PaymentTxn
 from pyteal import *
@@ -473,20 +474,92 @@ def view_all_quotes(request):
     quotes  = Quote.objects.all()
     return render(request, "view_all_quotes.html", {'quotes':quotes })
 
+def account_info(request):
+    algod_address = "https://testnet.algoexplorerapi.io/idx2"
+    algod_client = algod.AlgodClient("", algod_address, headers={'User-Agent': 'DoYouLoveMe?'})
+    account_address = settings.COMPANY_ALGO_ADDRESS
+    account_info = algod_client.account_info(account_address)
+
+    print(json.dumps(account_info, indent=4))
+    local_account_info = account_info.get('account')
+    account_balance = local_account_info.get('amount')
+    pending_rewards = local_account_info.get('pending_rewards')
+    print('Account balance: {} microAlgos'.format(account_balance))
+    print('Pending Rewards: {} microAlgos'.format(pending_rewards))
+
+    # get transaction at specific time
+    algod_indexer = indexer.IndexerClient("", algod_address, headers={'User-Agent': 'DoYouLoveMe?'})
+    response = algod_indexer.search_transactions_by_address(address=settings.COMPANY_ALGO_ADDRESS, start_time="2020-06-03T10:00:00-05:00")
+    print("Transaction Start Time 2020-06-03T10:00:00-05:00 = " + json.dumps(response, indent=2, sort_keys=True))
+
+    #TODO: cycle through all transactions, get sender, receiver , amount and fees
+    transactions_json = response.get('transactions')
+    print(transactions_json)
+
+    return render(request, "account_info.html", {'account_address':account_address, 'account_balance':account_balance, 'pending_rewards':pending_rewards, 'transactions_json':transactions_json} )
+
+def launch_license_smartcontract(client, sender, quote, approval_program, clear_program):
+    approval, clear = getContracts(client)
+
+    globalSchema = transaction.StateSchema(num_uints=7, num_byte_slices=2)
+    localSchema = transaction.StateSchema(num_uints=0, num_byte_slices=0)
+
+    #LicenseBegin  = quote.LicenseStart
+    #LicenseEnd  = quote.LicenseEnd
+    #PaymentBegin = 
+    #PaymentEnd = 
+    #ClientId =
+    #PaymentCompleted =
+    #RxPaymentAmount =
+    #ExpectedPaymentAmount =
+    #LicenseHash =
+
+    app_args = [
+        encoding.decode_address(sender),
+        LicenseBegin.to_bytes(8, "big"),
+        LicenseEnd.to_bytes(8, "big"),
+        PaymentBegin.to_bytes(8, "big"),
+        PaymentEnd.to_bytes(8, "big"),
+        LicenseHash.to_bytes(8, "big"),
+        ClientId.to_bytes(8, "big"),
+        PaymentCompleted.to_bytes(8, "big"),
+        RxPaymentAmount.to_bytes(8, "big"),
+        ExpectedPaymentAmount.to_bytes(8, "big"),
+    ]
+
+    txn = transaction.ApplicationCreateTxn(
+        sender=sender.getAddress(),
+        on_complete=transaction.OnComplete.NoOpOC,
+        approval_program=approval_program,
+        clear_program=clear_program,
+        global_schema=globalSchema,
+        local_schema=localSchema,
+        app_args=app_args,
+        sp=client.suggested_params(),
+    )
+
+    signedTxn = txn.sign(sender.getPrivateKey())
+
+    client.send_transaction(signedTxn)
+
+    response = waitForTransaction(client, signedTxn.get_txid())
+    assert response.applicationIndex is not None and response.applicationIndex > 0
+    return response.applicationIndex
+
 def generate_license(request, id, launch_license):
     quote  = Quote.objects.get(quote_id=id)
     products = quote.product.all()
     license_launched = 0
+    approval_teal_file = quote.quote_name+"_approval.teal"
+    clearstate_teal_file = quote.quote_name+"_clearstate.teal"
 
     if quote.state != LICENSE_LAUNCHED:
         license_launched = 0
-        aproval_teal_name = quote.quote_name+"_approval.teal"
-        with open(aproval_teal_name, 'w') as f:
+        with open(approval_teal_file, 'w') as f:
             compiled = compileTeal(approval_program(), Mode.Application)
             f.write(compiled)
     
-        clearstate_teal_name = quote.quote_name+"_clearstate.teal"
-        with open(clearstate_teal_name, 'w') as f:
+        with open(clearstate_teal_file, 'w') as f:
             compiled = compileTeal(clear_state_program(), Mode.Application)
             f.write(compiled)
     else: 
@@ -495,8 +568,10 @@ def generate_license(request, id, launch_license):
     if int(launch_license) == 1 :
         quote.state = LICENSE_LAUNCHED
         quote.save()
+
         #Start License on Blockchain..
+
         license_launched = 1
 
 
-    return render(request, "generate_license.html", {'quote':quote, 'product':products[0], 'license_launched':license_launched })
+    return render(request, "generate_license.html", {'quote':quote, 'product':products[0], 'license_launched':license_launched, 'approval_teal_file':approval_teal_file, 'clearstate_teal_file':clearstate_teal_file })

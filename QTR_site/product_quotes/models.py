@@ -9,6 +9,7 @@ REGISTERED  = 1    #Once it is sent as an algorand trasaction
 ACCEPTED    = 2    #Once other party accepts
 REJECTED    = 3    #If other party rejects
 INVALIDATED = 4    #If both sides agree to invalidate document
+LICENSE_LAUNCHED = 5    #If both sides agree to invalidate document
 
 STATE_IDS = (
     (CREATED,       "created_tag"),
