@@ -1,0 +1,59 @@
+{% extends "base.html" %}
+{% load i18n %}
+{% block head_title %}{% trans "Create a Quote " %}{% endblock %}
+
+{% load crispy_forms_tags %}
+{% block content %}
+
+<div class="flex-center flex-row ">
+<h1>View Quote  </h1>
+</div>
+
+<br>
+<br>
+
+
+<div class="flex-center flex-row">
+
+</div>
+
+<div class="flex-center ">
+  <div class="card">
+      <h5 class="card-header info-color white-text text-center py-4">
+          <strong>VIEW ALL QUOTES </strong>
+      </h5>
+  
+      <!--Card content-->
+      <div class="card-body px-lg-5">
+  
+      <br>
+      <br>
+      <table class="table">
+        <thead>
+          <tr>
+            <th scope="col">QUOTE NAME </th>
+            <th scope="col">ACCOUNT</th>
+            <th scope="col">HASH</th>
+            <th scope="col">VIEW QUOTE LINK</th>
+            <th scope="col">ALGO EXPLORER</th>
+          </tr>
+        </thead>
+        <tbody>
+        {% for quote in quotes %}
+          <tr>
+            <td>{{quote.quote_name}}</td>
+            <td></td>
+            <td>{{quote.sha256hash}} Algo</td>
+            <td> <a href="/quotes/view_quote/{{quote.quote_id}}" target="_blank">ViewQuoteDetails</a></td>
+            <td> <a href="https://testnet.algoexplorer.io/tx/{{quote.algod_txnid}}" target="_blank">ExploreTXN</a></td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+      <br>
+      </div>
+  </div>
+
+</div>
+
+{% endblock %}

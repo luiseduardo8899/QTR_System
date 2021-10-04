@@ -24,16 +24,166 @@ import sys
 from algosdk.v2client import algod
 from algosdk import mnemonic
 from algosdk.future.transaction import PaymentTxn
+from pyteal import *
 
 BUF_SIZE = 65536  #64*1024 = 64kb : Buffer Size large enough to contain images
 
 
 #START TAXABLE_IDS
-CREATED     = 0    #On creation it is saved to /media 
-REGISTERED  = 1    #Once it is sent as an algorand trasaction
-ACCEPTED    = 2    #Once other party accepts
-REJECTED    = 3    #If other party rejects
-INVALIDATED = 4    #If both sides agree to invalidate document
+CREATED     = 0         #On creation it is saved to /media 
+REGISTERED  = 1         #Once it is sent as an algorand trasaction
+ACCEPTED    = 2         #Once other party accepts
+REJECTED    = 3         #If other party rejects
+INVALIDATED = 4         #If both sides agree to invalidate document
+LICENSE_LAUNCHED = 5    #If both sides agree to invalidate document
+
+
+#Company: license issuing entity
+payment_term = 30 # in days
+def approval_program():
+
+    #Seq: on_creation : 
+    # Program creation parameters:
+    # 		LicenseBegin
+    # 		LicenseBegin
+    # 		LicenseEnd
+    # 		PaymentBegin
+    # 		PaymentEnd
+    # 		LicenseHash
+    # 		ClientId
+    # 		PaymentCompleted
+    # 		RxPaymentAmount
+    # 		ExpectedPaymentAmount
+    on_creation = Seq([
+        App.globalPut(Bytes("Company"), Txn.sender()),
+        Assert(Txn.application_args.length() == Int(7)),
+        App.globalPut(Bytes("LicenseBegin"), Btoi(Txn.application_args[0])),
+        App.globalPut(Bytes("LicenseEnd"), Btoi(Txn.application_args[1])),
+        App.globalPut(Bytes("PaymentBegin"), Btoi(Txn.application_args[2])),
+        App.globalPut(Bytes("PaymentEnd"), Btoi(Txn.application_args[3])),
+        App.globalPut(Bytes("LicenseHash"), Btoi(Txn.application_args[4])),  		     #Approved License Hash
+        App.globalPut(Bytes("ClientId"), Btoi(Txn.application_args[5])),     		     #Client ID for approved license
+        App.globalPut(Bytes("PaymentCompleted"), Btoi(Txn.application_args[6])),     	 #Payment has been completed within the payment period
+        App.globalPut(Bytes("RxPaymentAmount"), Btoi(Txn.application_args[6])),     	 #Payment has been completed within the payment period
+        App.globalPut(Bytes("ExpectedPaymentAmount"), Btoi(Txn.application_args[6])),  	 #Payment has been completed within the payment period
+        Return(Int(1))
+    ])
+
+    #check if the Txn sender is The Company
+    is_company = Txn.sender() == App.globalGet(Bytes("Company"))
+
+    # Check if Payment has been completed
+    get_payment_completed = App.globalGet(Bytes("PaymentCompleted")) #1 means completed, 0 not completed
+
+    # Get: the total recevied payment amount
+    get_rx_payment_amount = App.globalGet(Bytes("RxPaymentAmount")) #1 means completed, 0 not completed
+
+
+    def update_rx_payment(App, Txn):
+        App.globalPut(Bytes("RxPaymentAmount", Txn.application_args[1])) # get_rx_payment_amount() + Txn.amount))
+        rx_payment = App.globalGet(Bytes("RxPaymentAmount"))
+        return rx_payment
+
+    #Seq: on_payment:  Process a Txn that contains a payment against this contract
+    # Parameters:
+    # QTR_PAYMENT : denotes this is a QTR System Smart Contract Payment 
+    on_payment = Seq([
+	#Make sure payment is received within established payment term
+        Assert(And(
+            Global.round() >= App.globalGet(Bytes("PaymentBegin")),
+            Global.round() <= App.globalGet(Bytes("PaymentEnd"))
+        )),
+
+	#Make sure there is no duplicate payments  ( or payments made after the full payment was made )
+	Assert(And(	
+            App.globalGet(Bytes("PaymentCompleted")) == Int(1),  			#LUIS : need to use .value( ) ? 
+	    App.globalGet(Bytes("RxPaymentAmount")) >= App.globalGet(Bytes("ExpectedPaymentAmount")))
+        ),
+
+	#If a payment is received add payment amount to RxPaymentAmount
+        If( And( Global.round() <= App.globalGet(Bytes("PaymentEnd")),  Txn.amount() <=  App.globalGet(Bytes("ExpectedPaymentAmount"))) , 
+            App.globalPut(Bytes("RxPaymentAmount"), Int(1000) ) #LUIS: TODO: Calculate appropriate update +Txn.amount)
+        ), 
+
+
+	#If RxPaymentAmount is >= ExpectedPaymentAmount : mark payment as completed
+        If( App.globalGet(Bytes("RxPaymentAmount")) >= App.globalGet(Bytes("ExpectedPaymentAmount")), 
+            App.globalPut(Bytes("PaymentCompleted"), Int(1) ) #LUISTODO: Need to check this <<<<<<<<<<<,
+        ), 
+
+
+        #Finally transfer the partial or complete payment to The Company
+        #LUIS:TODO
+
+	#Payment succesfully processed
+        Return(Int(1))
+    ])
+
+    #Seq: on_closeout:  Handle the smart contract CloseOut Event for a specific account
+    on_closeout = Seq([ 
+
+        If(And(Global.round() <= App.globalGet(Bytes("LicenseEnd")) , get_payment_completed == Int(1)), 
+            App.globalPut(Bytes("CONTRACT_STATE"), Bytes("CANCELLED_AFTER_PAYMENT"))  
+        ),
+
+        If( And(Global.round() <= App.globalGet(Bytes("LicenseEnd")) , get_payment_completed == Int(0)), 
+            App.globalPut(Bytes("CONTRACT_STATE"), Bytes("CANCELLED_BEFORE_PAYMENT"))  
+        ),
+
+        If( And(Global.round() <= App.globalGet(Bytes("PaymentEnd")) , get_payment_completed == Int(0)), 
+            App.globalPut(Bytes("CONTRACT_STATE"), Bytes("CANCELLED_BEFORE_PAYMENT"))  
+        ),
+
+        Return(Int(1)) 
+    ])
+
+    #Seq: on_register: A client should optin to the license contract in between the Payment Begin period and the Payment end period, in order to make payment
+    on_register = Return(And(
+        Global.round() >= App.globalGet(Bytes("PaymentBegin")),
+        Global.round() <= App.globalGet(Bytes("PaymentEnd"))
+    ))
+
+
+    #PROGRAM: This is the heart of the smart contract
+    #Depending on how the smart contract is called it chooses which operation to run
+    program = Cond(
+        [Txn.application_id() == Int(0), on_creation],
+        [Txn.on_completion() == OnComplete.DeleteApplication, Return(is_company)],
+        [Txn.on_completion() == OnComplete.UpdateApplication, Return(is_company)],
+        [Txn.on_completion() == OnComplete.CloseOut, on_closeout],
+        [Txn.on_completion() == OnComplete.OptIn, on_register],
+        [Txn.application_args[0] == Bytes("QTR_PAYMENT"), on_payment], #Official app marks the QTR_PAYMENT in a transfer
+        [Txn.amount() > Int(0) , on_payment]                           #Process any transaction if it contains amount() as it may be sent from different account
+    )
+
+    return program
+
+def clear_state_program():
+
+    get_payment_completed = App.globalGet(Bytes("PaymentCompleted")) #1 means completed, 0 not completed
+
+    program = Seq([
+        #get_payment_completed,
+
+        If( And(Global.round() <= App.globalGet(Bytes("LicenseEnd")) , get_payment_completed == Int(1)), 
+            App.globalPut(Bytes("CONTRACT_STATE"), Bytes("CANCELLED_AFTER_PAYMENT"))  
+        ),
+
+        If( And(Global.round() <= App.globalGet(Bytes("LicenseEnd")) , get_payment_completed == Int(0)), 
+            App.globalPut(Bytes("CONTRACT_STATE"), Bytes("CANCELLED_BEFORE_PAYMENT"))  
+        ),
+
+        If( And(Global.round() <= App.globalGet(Bytes("PaymentEnd")) , get_payment_completed == Int(0)), 
+            App.globalPut(Bytes("CONTRACT_STATE"), Bytes("CANCELLED_BEFORE_PAYMENT"))  
+        ),
+
+        Return(Int(1))
+    ])
+
+    return program
+
+
+
 
 def get_balance(address):
     algod_address = "https://testnet.algoexplorerapi.io"
@@ -292,7 +442,7 @@ def generate_quote(request):
             q.save()
 
             # redirect to a new URL:
-            return HttpResponseRedirect('/quotes/generate_quote/')
+            return HttpResponseRedirect('/quotes/view_quote/'+str(q.quote_id)+'/')
         else:
             print("FORM ERRORS:\n\t")
             print(form.errors)
@@ -307,4 +457,46 @@ def generate_quote(request):
     products = Product.objects.all()
     return render(request, 'generate_quote.html', {'form': form, 'sales_persons':sales_persons, 'accounts':accounts, 'products':products})
 
-#def generate_license(request):
+# View details for a specififc function
+# Returns kana details
+def view_quote(request, id):
+    quote  = Quote.objects.get(quote_id=id)
+    sales_persons = quote.sales_person.all()
+    sales_person_name = sales_persons[0].name+" "+sales_persons[0].last_name
+    accounts = quote.account.all()
+    account_name = accounts[0].company_name
+    products = quote.product.all()
+    total = products[0].list_price * quote.discount * quote.quantity
+    return render(request, "view_quote.html", {'quote':quote, 'sales_person_name':sales_person_name, 'account_name':account_name, 'product':products[0], 'total':total })
+
+def view_all_quotes(request):
+    quotes  = Quote.objects.all()
+    return render(request, "view_all_quotes.html", {'quotes':quotes })
+
+def generate_license(request, id, launch_license):
+    quote  = Quote.objects.get(quote_id=id)
+    products = quote.product.all()
+    license_launched = 0
+
+    if quote.state != LICENSE_LAUNCHED:
+        license_launched = 0
+        aproval_teal_name = quote.quote_name+"_approval.teal"
+        with open(aproval_teal_name, 'w') as f:
+            compiled = compileTeal(approval_program(), Mode.Application)
+            f.write(compiled)
+    
+        clearstate_teal_name = quote.quote_name+"_clearstate.teal"
+        with open(clearstate_teal_name, 'w') as f:
+            compiled = compileTeal(clear_state_program(), Mode.Application)
+            f.write(compiled)
+    else: 
+        license_launched = 1
+
+    if int(launch_license) == 1 :
+        quote.state = LICENSE_LAUNCHED
+        quote.save()
+        #Start License on Blockchain..
+        license_launched = 1
+
+
+    return render(request, "generate_license.html", {'quote':quote, 'product':products[0], 'license_launched':license_launched })

@@ -1,0 +1,60 @@
+{% extends "base.html" %}
+{% load i18n %}
+{% block head_title %}{% trans "Generate License for Quote: {{quote.quote_name}}" %}{% endblock %}
+
+{% load crispy_forms_tags %}
+{% block content %}
+
+<div class="flex-center flex-row ">
+<h1>Generate License  </h1>
+</div>
+
+<br>
+<br>
+
+
+<div class="flex-center flex-row">
+
+</div>
+
+<div class="flex-center ">
+  <div class="card">
+      <h5 class="card-header info-color white-text text-center py-4">
+          <strong>LICENSE FOR: {{quote.quote_name}}</strong>
+      </h5>
+  
+      <!--Card content-->
+      <div class="card-body px-lg-5">
+      <table class="table">
+        <thead>
+          <tr>
+            <th scope="col">ID</th>
+            <th scope="col">PRODUCT CODE</th>
+            <th scope="col">DESCRIPTION</th>
+            <th scope="col">QUANTITY</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <th scope="row">1</th>
+            <td>{{product.product_code}}</td>
+            <td>{{product.description}}</td>
+            <td>{{quote.quantity}}</td>
+          </tr>
+        </tbody>
+      </table>
+      <h5>LICENSE HASH:{{quote.sha256hash}} <h5>
+      <h5>APPROVAL Teal File:  <h5>
+      <h5>CLEAR STATE Teal File: <h5>
+      <br>
+      {%if license_launched%}
+      <h1>LICENSE LAUNCHED ON ALGORAND</h1>
+      {% else %}
+      <button type="button" class="btn btn-dark large" onclick="window.location.href='/quotes/generate_license/{{quote.quote_id}}/1/'">Launch License on Algorand </button>
+      {% endif%}
+      </div>
+  </div>
+
+</div>
+
+{% endblock %}
